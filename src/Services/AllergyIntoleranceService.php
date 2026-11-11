@@ -113,22 +113,7 @@ class AllergyIntoleranceService extends BaseService
         // allergies do not have a user associated
         $temp_uuid_array = [];
         while ($row = sqlFetchArray($statementResults)) {
-            $row['uuid'] = UuidRegistry::uuidToString($row['allergy_uuid']);
-            $row['puuid'] = UuidRegistry::uuidToString($row['puuid']);
-            $row['patient_uuid'] = UuidRegistry::uuidToString($row['patient_uuid']);
-            $row['allergy_uuid'] = UuidRegistry::uuidToString($row['allergy_uuid']);
-            $row['practitioner'] = $row['practitioner'] ?
-                UuidRegistry::uuidToString($row['practitioner']) :
-                $row['practitioner'];
-            $row['organization'] = $row['organization'] ?
-                UuidRegistry::uuidToString($row['organization']) :
-                $row['organization'];
-            if ($row['diagnosis'] != "") {
-                $row['diagnosis'] = $this->addCoding($row['diagnosis']);
-            }
-            if (!empty($row['reaction']) && !empty($row['reaction_codes'])) {
-                $row['reaction'] = $this->addCoding($row['reaction_codes']);
-            }
+            $row = $this->createResultRecordFromDatabaseResult($row);
             unset($row['allergy_uuid']);
             // only add to processing result if unique
             if (!in_array($row['uuid'], $temp_uuid_array)) {
@@ -137,6 +122,39 @@ class AllergyIntoleranceService extends BaseService
             }
         }
         return $processingResult;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getUuidFields(): array
+    {
+        return [
+            'uuid',
+            'allergy_uuid',
+            'puuid',
+            'patient_uuid',
+            'practitioner',
+            'practitioner_uuid',
+            'organization',
+            'organization_uuid',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $row The record returned from the database
+     * @return array<string, mixed>
+     */
+    protected function createResultRecordFromDatabaseResult($row)
+    {
+        $row = parent::createResultRecordFromDatabaseResult($row);
+        if ($row['diagnosis'] != "") {
+            $row['diagnosis'] = $this->addCoding($row['diagnosis']);
+        }
+        if (!empty($row['reaction']) && !empty($row['reaction_codes'])) {
+            $row['reaction'] = $this->addCoding($row['reaction_codes']);
+        }
+        return $row;
     }
 
     /**
